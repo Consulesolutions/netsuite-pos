@@ -11,7 +11,7 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'super_admin') {
+    if (isAuthenticated && user?.role === 'SUPER_ADMIN') {
       navigate('/admin/dashboard');
     }
   }, [isAuthenticated, user, navigate]);

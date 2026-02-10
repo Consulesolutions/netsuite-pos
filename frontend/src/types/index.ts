@@ -12,7 +12,7 @@ export interface User {
   onboardingComplete?: boolean;
 }
 
-export type UserRole = 'super_admin' | 'owner' | 'admin' | 'manager' | 'cashier';
+export type UserRole = 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 
 export interface Location {
   id: string;

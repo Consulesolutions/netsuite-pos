@@ -15,11 +15,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       // Redirect based on role
-      if (user.role === 'super_admin') {
+      if (user.role === 'SUPER_ADMIN') {
         navigate('/admin/dashboard');
-      } else if (['cashier', 'manager'].includes(user.role)) {
+      } else if (['CASHIER', 'MANAGER'].includes(user.role)) {
         navigate('/pos');
-      } else if (user.role === 'owner' && !user.onboardingComplete) {
+      } else if (user.role === 'OWNER' && !user.onboardingComplete) {
         navigate('/app/onboarding');
       } else {
         navigate('/app');

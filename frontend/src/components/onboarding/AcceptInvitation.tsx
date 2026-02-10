@@ -81,9 +81,9 @@ export default function AcceptInvitation() {
       toast.success('Welcome! Your account has been created.');
 
       // Redirect based on role and onboarding status
-      if (user.role === 'owner' && !user.onboardingComplete) {
+      if (user.role === 'OWNER' && !user.onboardingComplete) {
         navigate('/app/onboarding');
-      } else if (['cashier', 'manager'].includes(user.role)) {
+      } else if (['CASHIER', 'MANAGER'].includes(user.role)) {
         navigate('/pos');
       } else {
         navigate('/app');
