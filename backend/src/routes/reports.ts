@@ -10,7 +10,7 @@ router.get('/daily-summary', async (req: AuthenticatedRequest, res: Response, ne
   try {
     const { startDate, endDate } = req.query;
     const locationId = req.user?.locationId;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -116,7 +116,7 @@ router.get('/daily-summary', async (req: AuthenticatedRequest, res: Response, ne
 router.get('/payment-breakdown', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -161,7 +161,7 @@ router.get('/payment-breakdown', async (req: AuthenticatedRequest, res: Response
 router.get('/top-items', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate, limit = 10 } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -215,7 +215,7 @@ router.get('/top-items', async (req: AuthenticatedRequest, res: Response, next: 
 router.get('/cashier-summary', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -292,7 +292,7 @@ router.get('/cashier-summary', async (req: AuthenticatedRequest, res: Response, 
 router.get('/hourly-sales', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { date } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const targetDate = date ? new Date(date as string) : new Date();
     const start = new Date(targetDate);

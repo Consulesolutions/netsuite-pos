@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { limit = 100 } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const customers = await prisma.customer.findMany({
       where: { tenantId },
@@ -46,7 +46,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 router.get('/search', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { q } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     if (!q || (q as string).length < 2) {
       res.json({ success: true, data: { customers: [] } });
@@ -95,7 +95,7 @@ router.get('/search', async (req: AuthenticatedRequest, res: Response, next: Nex
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const customer = await prisma.customer.findFirst({
       where: { id, tenantId },
@@ -139,7 +139,7 @@ router.get('/:id/transactions', async (req: AuthenticatedRequest, res: Response,
   try {
     const { id } = req.params;
     const { limit = 20 } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const transactions = await prisma.transaction.findMany({
       where: { customerId: id, tenantId },
@@ -183,7 +183,7 @@ router.get('/:id/transactions', async (req: AuthenticatedRequest, res: Response,
 router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { firstName, lastName, email, phone, company } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     if (!firstName || !lastName) {
       throw new ValidationError('First name and last name are required');
@@ -226,7 +226,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
   try {
     const { id } = req.params;
     const { firstName, lastName, email, phone, company, notes } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     // Verify customer belongs to tenant
     const existing = await prisma.customer.findFirst({
@@ -273,7 +273,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 // Sync customers (trigger sync from NetSuite)
 router.get('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const customers = await prisma.customer.findMany({
       where: { tenantId },

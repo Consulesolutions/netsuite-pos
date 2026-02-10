@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { limit = 50, status, type, startDate, endDate } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const where: Record<string, unknown> = { tenantId };
 
@@ -99,7 +99,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const transaction = await prisma.transaction.findFirst({
       where: { id, tenantId },
@@ -179,7 +179,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response, next: NextFunc
     const transaction = await prisma.transaction.create({
       data: {
         id: id || undefined,
-        tenantId: req.user!.tenantId,
+        tenantId: req.user!.tenantId!,
         type: (type?.toUpperCase() || 'SALE') as TransactionType,
         status: 'COMPLETED' as TransactionStatus,
         registerId: req.body.registerId,
@@ -279,7 +279,7 @@ router.post('/:id/void', async (req: AuthenticatedRequest, res: Response, next: 
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const transaction = await prisma.transaction.findFirst({
       where: { id, tenantId },
@@ -337,7 +337,7 @@ router.post('/:id/void', async (req: AuthenticatedRequest, res: Response, next: 
 router.post('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const transactionData = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     // Check if transaction already exists
     const existing = await prisma.transaction.findFirst({

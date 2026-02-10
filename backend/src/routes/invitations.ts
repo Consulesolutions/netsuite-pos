@@ -219,7 +219,7 @@ router.post('/tenant/invite', async (req: AuthenticatedRequest, res: Response, n
     // Verify location if provided
     if (locationId) {
       const location = await prisma.location.findFirst({
-        where: { id: locationId, tenantId },
+        where: { id: locationId, tenantId: tenantId! },
       });
 
       if (!location) {

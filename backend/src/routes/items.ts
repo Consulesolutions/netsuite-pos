@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { category, search, active } = req.query;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const where: Record<string, unknown> = { tenantId };
 
@@ -70,7 +70,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const item = await prisma.item.findFirst({
       where: { id, tenantId },
@@ -125,7 +125,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 router.get('/barcode/:barcode', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { barcode } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const item = await prisma.item.findFirst({
       where: { tenantId, barcode, isActive: true },
@@ -166,7 +166,7 @@ router.get('/barcode/:barcode', async (req: AuthenticatedRequest, res: Response,
 router.get('/sku/:sku', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { sku } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const item = await prisma.item.findFirst({
       where: { tenantId, sku: { equals: sku, mode: 'insensitive' }, isActive: true },
@@ -206,7 +206,7 @@ router.get('/sku/:sku', async (req: AuthenticatedRequest, res: Response, next: N
 // Sync items (trigger sync from NetSuite)
 router.get('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     // This would trigger a sync from NetSuite
     // For now, just return all items

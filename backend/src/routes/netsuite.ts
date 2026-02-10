@@ -27,7 +27,7 @@ router.get('/status', async (_req: AuthenticatedRequest, res: Response, next: Ne
 router.post('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { type } = req.body; // 'items', 'customers', 'inventory', or 'all'
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
     const client = new NetSuiteClient(tenantId);
 
     const results: Record<string, unknown> = {};
@@ -60,7 +60,7 @@ router.post('/sync', async (req: AuthenticatedRequest, res: Response, next: Next
 router.post('/push/transaction', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { transactionId } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
     const client = new NetSuiteClient(tenantId);
 
     const result = await client.pushTransaction(transactionId);
@@ -81,7 +81,7 @@ router.post('/push/transaction', async (req: AuthenticatedRequest, res: Response
 router.post('/push/customer', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { customerId } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
     const client = new NetSuiteClient(tenantId);
 
     const result = await client.pushCustomer(customerId);

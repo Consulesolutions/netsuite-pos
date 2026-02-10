@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction, Request } from 'express';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
-import { AuthenticatedRequest, authMiddleware } from '../middleware/auth.js';
+import { AuthenticatedRequest, authMiddleware, requireTenant } from '../middleware/auth.js';
 import { ValidationError, NotFoundError } from '../middleware/errorHandler.js';
 import { logger } from '../utils/logger.js';
 
@@ -74,14 +74,14 @@ router.get('/plans', (_req: Request, res: Response) => {
 });
 
 // Get current subscription
-router.get('/subscription', authMiddleware, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+router.get('/subscription', authMiddleware, requireTenant, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { tenant: true },
     });
 
-    if (!user) {
+    if (!user || !user.tenant) {
       throw new NotFoundError('User not found');
     }
 
@@ -130,7 +130,7 @@ router.post('/checkout', authMiddleware, async (req: AuthenticatedRequest, res: 
       include: { tenant: true },
     });
 
-    if (!user) {
+    if (!user || !user.tenant) {
       throw new NotFoundError('User not found');
     }
 
@@ -142,14 +142,14 @@ router.post('/checkout', authMiddleware, async (req: AuthenticatedRequest, res: 
         email: user.email,
         name: user.tenant.name,
         metadata: {
-          tenantId: user.tenantId,
+          tenantId: user.tenantId!,
         },
       });
 
       customerId = customer.id;
 
       await prisma.tenant.update({
-        where: { id: user.tenantId },
+        where: { id: user.tenantId! },
         data: { stripeCustomerId: customerId },
       });
     }
@@ -197,12 +197,12 @@ router.post('/portal', authMiddleware, async (req: AuthenticatedRequest, res: Re
       include: { tenant: true },
     });
 
-    if (!user || !user.tenant.stripeCustomerId) {
+    if (!user || !user.tenant || !user.tenant.stripeCustomerId) {
       throw new NotFoundError('No billing account found');
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.tenant.stripeCustomerId,
+      customer: user.tenant!.stripeCustomerId,
       return_url: `${process.env.FRONTEND_URL}/settings/billing`,
     });
 

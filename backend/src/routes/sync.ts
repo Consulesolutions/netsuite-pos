@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // Get sync status
 router.get('/status', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const pendingCount = await prisma.syncQueueItem.count({
       where: {
@@ -51,7 +51,7 @@ router.get('/status', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Get pending sync items
 router.get('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const items = await prisma.syncQueueItem.findMany({
       where: { tenantId },
@@ -81,7 +81,7 @@ router.get('/queue', async (req: AuthenticatedRequest, res: Response, next: Next
 router.post('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { type, action, data } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const item = await prisma.syncQueueItem.create({
       data: {
@@ -104,7 +104,7 @@ router.post('/queue', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Process sync queue
 router.post('/process', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     const pendingItems = await prisma.syncQueueItem.findMany({
       where: {
@@ -182,7 +182,7 @@ router.post('/process', async (req: AuthenticatedRequest, res: Response, next: N
 // Retry failed items
 router.post('/retry', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     await prisma.syncQueueItem.updateMany({
       where: {
@@ -207,7 +207,7 @@ router.post('/retry', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Clear sync queue
 router.delete('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     await prisma.syncQueueItem.deleteMany({
       where: { tenantId },

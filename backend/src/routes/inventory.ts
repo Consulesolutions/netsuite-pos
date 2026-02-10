@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 router.get('/:locationId', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { locationId } = req.params;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     // Verify location belongs to tenant
     const location = await prisma.location.findFirst({
@@ -54,7 +54,7 @@ router.post('/adjust', async (req: AuthenticatedRequest, res: Response, next: Ne
   try {
     const { itemId, adjustmentType, quantity, reason } = req.body;
     const locationId = req.user?.locationId;
-    const tenantId = req.user!.tenantId;
+    const tenantId = req.user!.tenantId!;
 
     if (!locationId) {
       throw new ValidationError('No location assigned');
