@@ -13,11 +13,11 @@ import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 
 const allNavItems = [
-  { to: '/app/pos', icon: ShoppingCartIcon, label: 'POS', roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
-  { to: '/app/inventory', icon: CubeIcon, label: 'Inventory', roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/app/customers', icon: UsersIcon, label: 'Customers', roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/app/reports', icon: ChartBarIcon, label: 'Reports', roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-  { to: '/app/settings', icon: Cog6ToothIcon, label: 'Settings', roles: ['OWNER', 'ADMIN'] },
+  { to: '/app/pos', icon: ShoppingCartIcon, label: 'POS', roles: ['owner', 'admin', 'manager', 'cashier'] },
+  { to: '/app/inventory', icon: CubeIcon, label: 'Inventory', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/customers', icon: UsersIcon, label: 'Customers', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/reports', icon: ChartBarIcon, label: 'Reports', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/settings', icon: Cog6ToothIcon, label: 'Settings', roles: ['owner', 'admin'] },
 ];
 
 export default function Layout() {

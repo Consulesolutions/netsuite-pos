@@ -55,15 +55,15 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     return <LoadingSpinner />;
   }
 
-  // Check for SUPER_ADMIN role (uppercase from Prisma enum)
-  if (!isAuthenticated || user?.role !== 'SUPER_ADMIN') {
+  // Check for super_admin role (uppercase from Prisma enum)
+  if (!isAuthenticated || user?.role !== 'super_admin') {
     return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
 }
 
-// Customer Admin protected route (OWNER/ADMIN roles)
+// Customer Admin protected route (owner/ADMIN roles)
 function CustomerAdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
 
@@ -76,19 +76,19 @@ function CustomerAdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Super admin should not access customer routes
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role === 'super_admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
   // Check if user needs onboarding
-  if (user?.role === 'OWNER' && user?.onboardingComplete === false) {
+  if (user?.role === 'owner' && user?.onboardingComplete === false) {
     return <Navigate to="/app/onboarding" replace />;
   }
 
   return <>{children}</>;
 }
 
-// POS User protected route (CASHIER/MANAGER)
+// POS User protected route (cashier/manager)
 function POSUserRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
 
@@ -100,7 +100,7 @@ function POSUserRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role === 'super_admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -119,7 +119,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role === 'super_admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -136,10 +136,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (isAuthenticated) {
     // Redirect based on role
-    if (user?.role === 'SUPER_ADMIN') {
+    if (user?.role === 'super_admin') {
       return <Navigate to="/admin/dashboard" replace />;
     }
-    if (['CASHIER', 'MANAGER'].includes(user?.role || '')) {
+    if (['cashier', 'manager'].includes(user?.role || '')) {
       return <Navigate to="/pos" replace />;
     }
     return <Navigate to="/app" replace />;
@@ -157,11 +157,11 @@ function RoleBasedRedirect() {
     if (!isLoading) {
       if (!isAuthenticated) {
         navigate('/login');
-      } else if (user?.role === 'SUPER_ADMIN') {
+      } else if (user?.role === 'super_admin') {
         navigate('/admin/dashboard');
-      } else if (['CASHIER', 'MANAGER'].includes(user?.role || '')) {
+      } else if (['cashier', 'manager'].includes(user?.role || '')) {
         navigate('/pos');
-      } else if (user?.role === 'OWNER' && !user?.onboardingComplete) {
+      } else if (user?.role === 'owner' && !user?.onboardingComplete) {
         navigate('/app/onboarding');
       } else {
         navigate('/app');
@@ -180,13 +180,13 @@ function AdminLoginRoute() {
     return <LoadingSpinner />;
   }
 
-  if (isAuthenticated && user?.role === 'SUPER_ADMIN') {
+  if (isAuthenticated && user?.role === 'super_admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
   // If authenticated but not super admin, redirect to appropriate place
   if (isAuthenticated) {
-    if (['CASHIER', 'MANAGER'].includes(user?.role || '')) {
+    if (['cashier', 'manager'].includes(user?.role || '')) {
       return <Navigate to="/pos" replace />;
     }
     return <Navigate to="/app" replace />;
