@@ -57,6 +57,10 @@ console.log('[STARTUP] All routes loaded');
 dotenv.config();
 
 const app = express();
+
+// Trust proxy - required for express-rate-limit behind Railway/Vercel proxy
+app.set('trust proxy', 1);
+
 const httpServer = createServer(app);
 const io = new SocketServer(httpServer, {
   cors: {
