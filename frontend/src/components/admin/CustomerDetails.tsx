@@ -68,11 +68,10 @@ export default function CustomerDetails() {
   const loadCustomer = async () => {
     try {
       const response = await api.get(`/admin/tenants/${id}`);
-      const data = response.data.data;
-      setCustomer(data);
+      setCustomer(response.data);
       setEditData({
-        plan: data.plan,
-        isActive: data.isActive,
+        plan: response.data.plan,
+        isActive: response.data.isActive,
       });
     } catch (error) {
       toast.error('Failed to load customer details');

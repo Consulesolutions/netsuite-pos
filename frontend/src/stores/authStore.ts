@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.post('/auth/login', { email, password });
-          const { user, token, tenant, location, register, shift } = response.data.data;
+          const { user, token, tenant, location, register, shift } = response.data;
 
           set({
             user,
@@ -170,7 +170,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         try {
           api.setAuthToken(token);
           const response = await api.get('/auth/me');
-          const { user, tenant, location, register, shift } = response.data.data;
+          const { user, tenant, location, register, shift } = response.data;
 
           set({
             user,
