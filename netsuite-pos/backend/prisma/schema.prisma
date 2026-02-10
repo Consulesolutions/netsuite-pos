@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== MULTI-TENANT MODELS ==============
+
+// Tenant (Customer Company)
+model Tenant {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique // subdomain: acme.yourpos.com
+  email           String
+  phone           String?
+  logo            String?
+
+  // Subscription & Billing
+  plan            PlanType @default(TRIAL)
+  planStartDate   DateTime @default(now())
+  planEndDate     DateTime?
+  stripeCustomerId String? @unique
+  stripeSubscriptionId String?
+
+  // NetSuite Configuration (per tenant)
+  netsuiteAccountId     String?
+  netsuiteConsumerKey   String?
+  netsuiteConsumerSecret String?
+  netsuiteTokenId       String?
+  netsuiteTokenSecret   String?
+  netsuiteRestletUrl    String?
+
+  // Settings
+  settings        Json?    @default("{}")
+  timezone        String   @default("America/New_York")
+  currency        String   @default("USD")
+  taxRate         Decimal  @db.Decimal(5, 4) @default(0)
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  users           User[]
+  locations       Location[]
+  items           Item[]
+  categories      Category[]
+  customers       Customer[]
+  transactions    Transaction[]
+  giftCards       GiftCard[]
+
+  @@index([slug])
+  @@index([stripeCustomerId])
+}
+
+enum PlanType {
+  TRIAL        // 14-day free trial
+  STARTER      // 1 location, 1 register
+  PROFESSIONAL // 3 locations, unlimited registers
+  ENTERPRISE   // Unlimited, custom features
+}
+
+// Plan Limits
+model PlanLimits {
+  id              String   @id @default(uuid())
+  plan            PlanType @unique
+  maxLocations    Int
+  maxRegisters    Int
+  maxUsers        Int
+  maxItems        Int
+  features        Json     // { "offlineMode": true, "reports": true, etc. }
+}
+
+// ============== USER & AUTH ==============
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole @default(CASHIER)
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  shifts       Shift[]
+  transactions Transaction[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+enum UserRole {
+  OWNER    // Full access, billing
+  ADMIN    // Full access, no billing
+  MANAGER  // Location management
+  CASHIER  // POS only
+}
+
+// ============== LOCATION & REGISTER ==============
+
+model Location {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  netsuiteId   String?
+  name         String
+  subsidiary   String?
+  address      String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  registers    Register[]
+  users        User[]
+  transactions Transaction[]
+  inventory    InventoryLevel[]
+
+  @@unique([tenantId, netsuiteId])
+  @@index([tenantId])
+}
+
+model Register {
+  id           String   @id @default(uuid())
+  name         String
+  locationId   String
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  shifts       Shift[]
+  transactions Transaction[]
+}
+
+// ============== SHIFT ==============
+
+model Shift {
+  id             String      @id @default(uuid())
+  registerId     String
+  register       Register    @relation(fields: [registerId], references: [id])
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  startTime      DateTime    @default(now())
+  endTime        DateTime?
+  openingBalance Decimal     @db.Decimal(10, 2)
+  closingBalance Decimal?    @db.Decimal(10, 2)
+  expectedCash   Decimal?    @db.Decimal(10, 2)
+  variance       Decimal?    @db.Decimal(10, 2)
+  status         ShiftStatus @default(OPEN)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+// ============== ITEMS & CATEGORIES ==============
+
+model Category {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  parentId  String?
+  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  color     String?
+  imageUrl  String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     Item[]
+
+  @@index([tenantId])
+}
+
+model Item {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  netsuiteId     String?
+  sku            String
+  name           String
+  description    String?
+  barcode        String?
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  basePrice      Decimal  @db.Decimal(10, 2)
+  cost           Decimal? @db.Decimal(10, 2)
+  taxRate        Decimal? @db.Decimal(5, 4)
+  trackInventory Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  imageUrl       String?
+  unit           String?
+  requiresWeight Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  inventory      InventoryLevel[]
+  priceLevels    PriceLevel[]
+  transactionItems TransactionItem[]
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, netsuiteId])
+  @@index([tenantId])
+  @@index([tenantId, barcode])
+}
+
+model InventoryLevel {
+  id                String   @id @default(uuid())
+  itemId            String
+  item              Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  locationId        String
+  location          Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  quantityOnHand    Decimal  @db.Decimal(10, 2) @default(0)
+  quantityAvailable Decimal  @db.Decimal(10, 2) @default(0)
+  quantityCommitted Decimal  @db.Decimal(10, 2) @default(0)
+  reorderPoint      Decimal? @db.Decimal(10, 2)
+  lastSyncedAt      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([itemId, locationId])
+}
+
+model PriceLevel {
+  id        String   @id @default(uuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, name])
+}
+
+// ============== CUSTOMERS ==============
+
+model Customer {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  netsuiteId    String?
+  email         String?
+  firstName     String
+  lastName      String
+  phone         String?
+  company       String?
+  priceLevel    String?
+  creditLimit   Decimal? @db.Decimal(10, 2)
+  balance       Decimal  @db.Decimal(10, 2) @default(0)
+  loyaltyPoints Int      @default(0)
+  taxExempt     Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  addresses     CustomerAddress[]
+  transactions  Transaction[]
+  giftCards     GiftCard[]
+
+  @@unique([tenantId, netsuiteId])
+  @@index([tenantId])
+  @@index([tenantId, email])
+  @@index([tenantId, phone])
+}
+
+model CustomerAddress {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String
+  street     String
+  city       String
+  state      String
+  zip        String
+  country    String   @default("US")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ============== TRANSACTIONS ==============
+
+model Transaction {
+  id            String            @id @default(uuid())
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  netsuiteId    String?
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  registerId    String
+  register      Register          @relation(fields: [registerId], references: [id])
+  locationId    String
+  location      Location          @relation(fields: [locationId], references: [id])
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+  customerId    String?
+  customer      Customer?         @relation(fields: [customerId], references: [id])
+  receiptNumber String
+  subtotal      Decimal           @db.Decimal(10, 2)
+  taxTotal      Decimal           @db.Decimal(10, 2)
+  discountTotal Decimal           @db.Decimal(10, 2) @default(0)
+  total         Decimal           @db.Decimal(10, 2)
+  notes         String?
+  syncedAt      DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  items         TransactionItem[]
+  payments      Payment[]
+
+  @@unique([tenantId, receiptNumber])
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, customerId])
+}
+
+enum TransactionType {
+  SALE
+  RETURN
+  EXCHANGE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  VOIDED
+  SYNCED
+}
+
+model TransactionItem {
+  id             String      @id @default(uuid())
+  transactionId  String
+  transaction    Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           Item        @relation(fields: [itemId], references: [id])
+  itemName       String
+  sku            String
+  quantity       Decimal     @db.Decimal(10, 2)
+  unitPrice      Decimal     @db.Decimal(10, 2)
+  discountAmount Decimal     @db.Decimal(10, 2) @default(0)
+  taxAmount      Decimal     @db.Decimal(10, 2) @default(0)
+  lineTotal      Decimal     @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime    @default(now())
+}
+
+// ============== PAYMENTS ==============
+
+model Payment {
+  id            String        @id @default(uuid())
+  transactionId String
+  transaction   Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  method        PaymentMethod
+  amount        Decimal       @db.Decimal(10, 2)
+  reference     String?
+  cardLast4     String?
+  cardBrand     String?
+  giftCardId    String?
+  changeAmount  Decimal?      @db.Decimal(10, 2)
+  status        PaymentStatus @default(COMPLETED)
+  processedAt   DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  GIFT_CARD
+  STORE_CREDIT
+  CHECK
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ============== GIFT CARDS ==============
+
+model GiftCard {
+  id             String    @id @default(uuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number         String
+  balance        Decimal   @db.Decimal(10, 2)
+  originalAmount Decimal   @db.Decimal(10, 2)
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, number])
+  @@index([tenantId])
+}
+
+// ============== SYNC & AUDIT ==============
+
+model SyncQueueItem {
+  id          String   @id @default(uuid())
+  tenantId    String
+  type        String
+  action      String
+  data        Json
+  attempts    Int      @default(0)
+  lastAttempt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  action      String
+  entityType  String
+  entityId    String
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, entityType, entityId])
+}
