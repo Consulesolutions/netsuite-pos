@@ -242,6 +242,9 @@ if (typeof window !== 'undefined') {
   let lastKeyTime = 0;
 
   window.addEventListener('keydown', (event) => {
+    // Guard against undefined event.key
+    if (!event.key) return;
+
     const currentTime = Date.now();
 
     // Barcode scanners typically send characters very quickly
