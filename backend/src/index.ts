@@ -59,7 +59,9 @@ dotenv.config();
 const app = express();
 
 // Trust proxy - required for express-rate-limit behind Railway/Vercel proxy
+// This allows proper IP detection behind load balancers
 app.set('trust proxy', 1);
+console.log('[STARTUP] Trust proxy enabled');
 
 const httpServer = createServer(app);
 const io = new SocketServer(httpServer, {
