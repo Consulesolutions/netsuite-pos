@@ -137,7 +137,7 @@ export const useHardwareStore = create<HardwareState & HardwareActions>()(
         });
       },
 
-      processCardPayment: async (amount: number) => {
+      processCardPayment: async (_amount: number) => {
         const { cardTerminalConfig, status } = get();
 
         if (!cardTerminalConfig || status.cardTerminal !== 'connected') {
