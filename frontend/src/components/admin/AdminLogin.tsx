@@ -34,7 +34,8 @@ export default function AdminLogin() {
     setIsLoading(true);
     try {
       await login(email, password);
-      // The redirect will be handled by the effect above
+      // Navigate immediately after successful login
+      navigate('/admin/dashboard');
     } catch {
       // Error handled by store
     } finally {

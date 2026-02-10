@@ -171,14 +171,39 @@ function RoleBasedRedirect() {
   return <LoadingSpinner />;
 }
 
+// Admin login route wrapper - handles redirect for authenticated super admins
+function AdminLoginRoute() {
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isAuthenticated && user?.role === 'super_admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // If authenticated but not super admin, redirect to appropriate place
+  if (isAuthenticated) {
+    if (['cashier', 'manager'].includes(user?.role || '')) {
+      return <Navigate to="/pos" replace />;
+    }
+    return <Navigate to="/app" replace />;
+  }
+
+  return <AdminLogin />;
+}
+
 function App() {
   return (
     <AuthInitializer>
       <Routes>
-        {/* Super Admin routes */}
-        <Route path="/admin" element={<PublicRoute><AdminLogin /></PublicRoute>} />
+        {/* Super Admin login - exact match only */}
+        <Route path="/admin" element={<AdminLoginRoute />} />
+
+        {/* Super Admin dashboard routes */}
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
             <SuperAdminRoute>
               <AdminLayout />
