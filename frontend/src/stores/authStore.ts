@@ -65,9 +65,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           });
 
           api.setAuthToken(token);
-        } catch (error) {
+        } catch (error: unknown) {
+          let errorMessage = 'Login failed';
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'object' && error !== null && 'message' in error) {
+            errorMessage = String((error as { message: unknown }).message);
+          }
           set({
-            error: error instanceof Error ? error.message : 'Login failed',
+            error: errorMessage,
             isLoading: false,
           });
           throw error;

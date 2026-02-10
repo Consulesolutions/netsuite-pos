@@ -53,8 +53,20 @@ class ApiService {
         }
 
         // Handle API errors
-        const apiError = error.response.data?.error || error.message;
-        return Promise.reject(new Error(apiError));
+        const errorData = error.response.data;
+        let errorMessage = 'An error occurred';
+
+        if (typeof errorData?.error === 'string') {
+          errorMessage = errorData.error;
+        } else if (typeof errorData?.message === 'string') {
+          errorMessage = errorData.message;
+        } else if (typeof errorData?.error?.message === 'string') {
+          errorMessage = errorData.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        return Promise.reject(new Error(errorMessage));
       }
     );
   }
