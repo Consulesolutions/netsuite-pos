@@ -27,7 +27,8 @@ router.get('/status', async (_req: AuthenticatedRequest, res: Response, next: Ne
 router.post('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { type } = req.body; // 'items', 'customers', 'inventory', or 'all'
-    const client = new NetSuiteClient();
+    const tenantId = req.user!.tenantId;
+    const client = new NetSuiteClient(tenantId);
 
     const results: Record<string, unknown> = {};
 
@@ -59,7 +60,8 @@ router.post('/sync', async (req: AuthenticatedRequest, res: Response, next: Next
 router.post('/push/transaction', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { transactionId } = req.body;
-    const client = new NetSuiteClient();
+    const tenantId = req.user!.tenantId;
+    const client = new NetSuiteClient(tenantId);
 
     const result = await client.pushTransaction(transactionId);
 
@@ -79,7 +81,8 @@ router.post('/push/transaction', async (req: AuthenticatedRequest, res: Response
 router.post('/push/customer', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { customerId } = req.body;
-    const client = new NetSuiteClient();
+    const tenantId = req.user!.tenantId;
+    const client = new NetSuiteClient(tenantId);
 
     const result = await client.pushCustomer(customerId);
 
@@ -97,7 +100,7 @@ router.post('/push/customer', async (req: AuthenticatedRequest, res: Response, n
 // Webhook handler for NetSuite events
 router.post('/webhook', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { event, data } = req.body;
+    const { event, data: _eventData } = req.body;
 
     // Handle different webhook events from NetSuite
     switch (event) {
