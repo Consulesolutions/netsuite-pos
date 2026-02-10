@@ -207,7 +207,7 @@ export const dbUtils = {
   async importData(jsonData: string): Promise<void> {
     const data = JSON.parse(jsonData);
 
-    await db.transaction('rw', db.items, db.categories, db.customers, db.transactions, db.heldCarts, db.inventory, db.syncQueue, db.giftCards, async () => {
+    await db.transaction('rw', [db.items, db.categories, db.customers, db.transactions, db.heldCarts, db.inventory, db.syncQueue, db.giftCards], async () => {
       await this.clearAll();
 
       if (data.items) await db.items.bulkAdd(data.items);
