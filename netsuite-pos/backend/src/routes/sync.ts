@@ -8,20 +8,25 @@ const prisma = new PrismaClient();
 // Get sync status
 router.get('/status', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
+
     const pendingCount = await prisma.syncQueueItem.count({
       where: {
+        tenantId,
         attempts: { lt: 5 },
       },
     });
 
     const errorCount = await prisma.syncQueueItem.count({
       where: {
+        tenantId,
         attempts: { gte: 5 },
       },
     });
 
     const lastSync = await prisma.syncQueueItem.findFirst({
       where: {
+        tenantId,
         attempts: { gte: 5 },
       },
       orderBy: {
@@ -46,7 +51,10 @@ router.get('/status', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Get pending sync items
 router.get('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
+
     const items = await prisma.syncQueueItem.findMany({
+      where: { tenantId },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -73,9 +81,11 @@ router.get('/queue', async (req: AuthenticatedRequest, res: Response, next: Next
 router.post('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { type, action, data } = req.body;
+    const tenantId = req.user!.tenantId;
 
     const item = await prisma.syncQueueItem.create({
       data: {
+        tenantId,
         type,
         action,
         data,
@@ -94,8 +104,11 @@ router.post('/queue', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Process sync queue
 router.post('/process', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
+
     const pendingItems = await prisma.syncQueueItem.findMany({
       where: {
+        tenantId,
         attempts: { lt: 5 },
       },
       orderBy: { createdAt: 'asc' },
@@ -169,8 +182,11 @@ router.post('/process', async (req: AuthenticatedRequest, res: Response, next: N
 // Retry failed items
 router.post('/retry', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
+
     await prisma.syncQueueItem.updateMany({
       where: {
+        tenantId,
         attempts: { gte: 5 },
       },
       data: {
@@ -191,7 +207,11 @@ router.post('/retry', async (req: AuthenticatedRequest, res: Response, next: Nex
 // Clear sync queue
 router.delete('/queue', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    await prisma.syncQueueItem.deleteMany();
+    const tenantId = req.user!.tenantId;
+
+    await prisma.syncQueueItem.deleteMany({
+      where: { tenantId },
+    });
 
     res.json({
       success: true,
