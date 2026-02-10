@@ -12,18 +12,23 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 
-const navItems = [
-  { to: '/app/pos', icon: ShoppingCartIcon, label: 'POS' },
-  { to: '/app/inventory', icon: CubeIcon, label: 'Inventory' },
-  { to: '/app/customers', icon: UsersIcon, label: 'Customers' },
-  { to: '/app/reports', icon: ChartBarIcon, label: 'Reports' },
-  { to: '/app/settings', icon: Cog6ToothIcon, label: 'Settings' },
+const allNavItems = [
+  { to: '/app/pos', icon: ShoppingCartIcon, label: 'POS', roles: ['owner', 'admin', 'manager', 'cashier'] },
+  { to: '/app/inventory', icon: CubeIcon, label: 'Inventory', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/customers', icon: UsersIcon, label: 'Customers', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/reports', icon: ChartBarIcon, label: 'Reports', roles: ['owner', 'admin', 'manager'] },
+  { to: '/app/settings', icon: Cog6ToothIcon, label: 'Settings', roles: ['owner', 'admin'] },
 ];
 
 export default function Layout() {
   const location = useLocation();
   const { user, tenant, location: posLocation, register, logout } = useAuthStore();
   const { status } = useSyncStore();
+
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter(item =>
+    user?.role && item.roles.includes(user.role)
+  );
 
   const handleLogout = async () => {
     try {

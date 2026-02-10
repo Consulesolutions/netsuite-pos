@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   Bars3Icon,
   PauseIcon,
   ArrowPathIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import { useCartStore } from '../../stores/cartStore';
 import { useItemStore } from '../../stores/itemStore';
@@ -18,14 +20,28 @@ import toast from 'react-hot-toast';
 
 type ViewMode = 'grid' | 'checkout' | 'held';
 
-export default function POSScreen() {
+interface POSScreenProps {
+  fullScreen?: boolean;
+}
+
+export default function POSScreen({ fullScreen = false }: POSScreenProps) {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const { cart, addItem, holdCart, loadHeldCarts, heldCarts } = useCartStore();
   const { items, loadItems, loadCategories, searchItems, getItemByBarcode } = useItemStore();
   const { lastBarcode, clearBarcode } = useHardwareStore();
-  const { location } = useAuthStore();
+  const { user, tenant, location, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      toast.error('Please close your shift before logging out');
+    }
+  };
 
   // Load initial data
   useEffect(() => {
@@ -80,9 +96,44 @@ export default function POSScreen() {
   }, []);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex">
-      {/* Left panel - Products or Checkout */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+    <div className={fullScreen ? 'h-screen flex flex-col' : 'h-[calc(100vh-3.5rem)] flex flex-col'}>
+      {/* Full screen header for POS users */}
+      {fullScreen && (
+        <header className="h-14 bg-primary-900 flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-primary-900 font-bold text-sm">POS</span>
+            </div>
+            <div className="text-white">
+              <span className="font-medium">{tenant?.name}</span>
+              {location && (
+                <span className="text-primary-300 text-sm ml-2">
+                  {location.name}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right text-white">
+              <div className="text-sm font-medium">
+                {user?.firstName} {user?.lastName}
+              </div>
+              <div className="text-xs text-primary-300 capitalize">{user?.role}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-primary-300 hover:text-white hover:bg-primary-800 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left panel - Products or Checkout */}
+        <div className="flex-1 flex flex-col bg-gray-50">
         {viewMode === 'checkout' ? (
           <Checkout onBack={handleBackToGrid} />
         ) : viewMode === 'held' ? (
@@ -180,6 +231,7 @@ export default function POSScreen() {
             Checkout ${cart.total.toFixed(2)}
           </button>
         </div>
+      </div>
       </div>
 
       {/* Customer search modal */}

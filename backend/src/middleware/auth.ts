@@ -8,12 +8,14 @@ const prisma = new PrismaClient();
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
-    tenantId: string;
+    tenantId: string | null;
     email: string;
     firstName: string;
     lastName: string;
     role: string;
     locationId?: string | null;
+    onboardingStep?: number;
+    onboardingComplete?: boolean;
   };
   tenant?: {
     id: string;
@@ -21,12 +23,12 @@ export interface AuthenticatedRequest extends Request {
     slug: string;
     plan: string;
     isActive: boolean;
-  };
+  } | null;
 }
 
 export interface JWTPayload {
   userId: string;
-  tenantId: string;
+  tenantId: string | null;
   email: string;
   role: string;
 }
@@ -63,6 +65,8 @@ export async function authMiddleware(
         role: true,
         locationId: true,
         isActive: true,
+        onboardingStep: true,
+        onboardingComplete: true,
         tenant: {
           select: {
             id: true,
@@ -79,7 +83,26 @@ export async function authMiddleware(
       throw new AuthenticationError('User not found or inactive');
     }
 
-    if (!user.tenant.isActive) {
+    // SUPER_ADMIN users don't have a tenant
+    if (user.role === 'SUPER_ADMIN') {
+      req.user = {
+        id: user.id,
+        tenantId: null,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        locationId: user.locationId,
+        onboardingStep: user.onboardingStep,
+        onboardingComplete: user.onboardingComplete,
+      };
+      req.tenant = null;
+      next();
+      return;
+    }
+
+    // For regular users, require active tenant
+    if (!user.tenant || !user.tenant.isActive) {
       throw new AuthenticationError('Account has been deactivated');
     }
 
@@ -91,6 +114,8 @@ export async function authMiddleware(
       lastName: user.lastName,
       role: user.role,
       locationId: user.locationId,
+      onboardingStep: user.onboardingStep,
+      onboardingComplete: user.onboardingComplete,
     };
     req.tenant = user.tenant;
     next();
@@ -105,6 +130,39 @@ export async function authMiddleware(
       next(error);
     }
   }
+}
+
+// Middleware to require SUPER_ADMIN role
+export function requireSuperAdmin(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    next(new AuthenticationError());
+    return;
+  }
+
+  if (req.user.role !== 'SUPER_ADMIN') {
+    next(new AuthorizationError('Super Admin access required'));
+    return;
+  }
+
+  next();
+}
+
+// Middleware to require tenant (blocks SUPER_ADMIN from tenant-specific routes)
+export function requireTenant(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): void {
+  if (!req.user?.tenantId || !req.tenant) {
+    next(new AuthorizationError('Tenant context required'));
+    return;
+  }
+
+  next();
 }
 
 export function requireRole(...roles: string[]) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../../services/api';
+import { api } from '../../services/api';
 
 interface Plan {
   id: string;

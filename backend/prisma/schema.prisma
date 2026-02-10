@@ -51,6 +51,7 @@ model Tenant {
   customers       Customer[]
   transactions    Transaction[]
   giftCards       GiftCard[]
+  invitations     Invitation[]
 
   @@index([slug])
   @@index([stripeCustomerId])
@@ -78,9 +79,9 @@ model PlanLimits {
 
 model User {
   id           String   @id @default(uuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  email        String
+  tenantId     String?  // Nullable for SUPER_ADMIN (system owner)
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String   @unique // Globally unique for SUPER_ADMIN support
   passwordHash String
   firstName    String
   lastName     String
@@ -89,20 +90,47 @@ model User {
   location     Location? @relation(fields: [locationId], references: [id])
   isActive     Boolean  @default(true)
   lastLoginAt  DateTime?
+
+  // Onboarding tracking for Customer Admins
+  onboardingStep    Int      @default(0)
+  onboardingComplete Boolean @default(false)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   shifts       Shift[]
   transactions Transaction[]
+  invitationsSent Invitation[] @relation("InvitationCreator")
 
-  @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([email])
 }
 
 enum UserRole {
-  OWNER    // Full access, billing
-  ADMIN    // Full access, no billing
-  MANAGER  // Location management
-  CASHIER  // POS only
+  SUPER_ADMIN  // System owner (platform admin)
+  OWNER        // Customer Admin (tenant owner, full access + billing)
+  ADMIN        // Customer Admin (secondary, full access, no billing)
+  MANAGER      // Store manager (POS + some admin)
+  CASHIER      // POS only
+}
+
+// ============== INVITATIONS ==============
+
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  token       String    @unique
+  role        UserRole
+  tenantId    String?   // Nullable for inviting new tenant OWNERs
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String
+  createdBy   User      @relation("InvitationCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@index([tenantId])
 }
 
 // ============== LOCATION & REGISTER ==============

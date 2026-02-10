@@ -10,6 +10,16 @@ const prisma = new PrismaClient();
 router.get('/:locationId', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { locationId } = req.params;
+    const tenantId = req.user!.tenantId;
+
+    // Verify location belongs to tenant
+    const location = await prisma.location.findFirst({
+      where: { id: locationId, tenantId },
+    });
+
+    if (!location) {
+      throw new NotFoundError('Location not found');
+    }
 
     const inventory = await prisma.inventoryLevel.findMany({
       where: { locationId },
@@ -44,6 +54,7 @@ router.post('/adjust', async (req: AuthenticatedRequest, res: Response, next: Ne
   try {
     const { itemId, adjustmentType, quantity, reason } = req.body;
     const locationId = req.user?.locationId;
+    const tenantId = req.user!.tenantId;
 
     if (!locationId) {
       throw new ValidationError('No location assigned');
@@ -99,6 +110,7 @@ router.post('/adjust', async (req: AuthenticatedRequest, res: Response, next: Ne
     // Log the adjustment
     await prisma.auditLog.create({
       data: {
+        tenantId,
         userId: req.user!.id,
         action: 'INVENTORY_ADJUSTMENT',
         entityType: 'InventoryLevel',
@@ -159,9 +171,6 @@ router.post('/transfer', async (req: AuthenticatedRequest, res: Response, next: 
         quantityAvailable: { decrement: quantity },
       },
     });
-
-    // In a real implementation, this would create a Transfer Order in NetSuite
-    // For now, we'll just return success
 
     res.status(201).json({
       success: true,

@@ -10,11 +10,22 @@ export default function LoginPage() {
   const { login, isAuthenticated, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
+  const user = useAuthStore((state) => state.user);
+
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/app/pos');
+    if (isAuthenticated && user) {
+      // Redirect based on role
+      if (user.role === 'super_admin') {
+        navigate('/admin/dashboard');
+      } else if (['cashier', 'manager'].includes(user.role)) {
+        navigate('/pos');
+      } else if (user.role === 'owner' && !user.onboardingComplete) {
+        navigate('/app/onboarding');
+      } else {
+        navigate('/app');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
     if (error) {
@@ -35,7 +46,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success('Login successful');
-      navigate('/app/pos');
+      // Redirect is handled by the useEffect above when isAuthenticated changes
     } catch {
       // Error handled by store
     } finally {
@@ -110,18 +121,17 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
-                Start free trial
-              </Link>
+            <p className="text-sm text-gray-500">
+              Invitation required to create an account
             </p>
           </div>
         </div>
 
-        {/* Demo credentials */}
-        <div className="mt-6 text-center text-primary-200 text-sm">
-          <p>Demo: demo@example.com / demo123</p>
+        {/* Admin login link */}
+        <div className="mt-6 text-center">
+          <Link to="/admin" className="text-primary-200 text-sm hover:text-white">
+            Admin Login
+          </Link>
         </div>
       </div>
     </div>

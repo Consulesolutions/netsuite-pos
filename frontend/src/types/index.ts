@@ -6,11 +6,13 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
-  locationId: string;
+  locationId: string | null;
   registerId?: string;
+  onboardingStep?: number;
+  onboardingComplete?: boolean;
 }
 
-export type UserRole = 'admin' | 'manager' | 'cashier';
+export type UserRole = 'super_admin' | 'owner' | 'admin' | 'manager' | 'cashier';
 
 export interface Location {
   id: string;

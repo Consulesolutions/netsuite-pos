@@ -10,6 +10,7 @@ router.get('/daily-summary', async (req: AuthenticatedRequest, res: Response, ne
   try {
     const { startDate, endDate } = req.query;
     const locationId = req.user?.locationId;
+    const tenantId = req.user!.tenantId;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -17,20 +18,19 @@ router.get('/daily-summary', async (req: AuthenticatedRequest, res: Response, ne
     const end = endDate ? new Date(endDate as string) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    const where = {
-      createdAt: {
-        gte: start,
-        lte: end,
-      },
-      status: {
-        in: ['COMPLETED', 'SYNCED'] as const,
-      },
-      ...(locationId && { locationId }),
-    };
-
     // Get transaction totals
     const transactions = await prisma.transaction.findMany({
-      where,
+      where: {
+        tenantId,
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+        status: {
+          in: ['COMPLETED', 'SYNCED'],
+        },
+        ...(locationId && { locationId }),
+      },
       include: {
         payments: true,
         items: true,
@@ -116,6 +116,7 @@ router.get('/daily-summary', async (req: AuthenticatedRequest, res: Response, ne
 router.get('/payment-breakdown', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate } = req.query;
+    const tenantId = req.user!.tenantId;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -126,6 +127,9 @@ router.get('/payment-breakdown', async (req: AuthenticatedRequest, res: Response
     const payments = await prisma.payment.groupBy({
       by: ['method'],
       where: {
+        transaction: {
+          tenantId,
+        },
         processedAt: {
           gte: start,
           lte: end,
@@ -157,6 +161,7 @@ router.get('/payment-breakdown', async (req: AuthenticatedRequest, res: Response
 router.get('/top-items', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate, limit = 10 } = req.query;
+    const tenantId = req.user!.tenantId;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -168,6 +173,7 @@ router.get('/top-items', async (req: AuthenticatedRequest, res: Response, next: 
       by: ['itemId', 'itemName'],
       where: {
         transaction: {
+          tenantId,
           createdAt: {
             gte: start,
             lte: end,
@@ -209,6 +215,7 @@ router.get('/top-items', async (req: AuthenticatedRequest, res: Response, next: 
 router.get('/cashier-summary', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate } = req.query;
+    const tenantId = req.user!.tenantId;
 
     const start = startDate ? new Date(startDate as string) : new Date();
     start.setHours(0, 0, 0, 0);
@@ -219,6 +226,7 @@ router.get('/cashier-summary', async (req: AuthenticatedRequest, res: Response, 
     const transactions = await prisma.transaction.groupBy({
       by: ['userId'],
       where: {
+        tenantId,
         createdAt: {
           gte: start,
           lte: end,
@@ -284,6 +292,7 @@ router.get('/cashier-summary', async (req: AuthenticatedRequest, res: Response, 
 router.get('/hourly-sales', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { date } = req.query;
+    const tenantId = req.user!.tenantId;
 
     const targetDate = date ? new Date(date as string) : new Date();
     const start = new Date(targetDate);
@@ -294,6 +303,7 @@ router.get('/hourly-sales', async (req: AuthenticatedRequest, res: Response, nex
 
     const transactions = await prisma.transaction.findMany({
       where: {
+        tenantId,
         createdAt: {
           gte: start,
           lte: end,

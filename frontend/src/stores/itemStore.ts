@@ -44,8 +44,8 @@ export const useItemStore = create<ItemState & ItemActions>((set, get) => ({
 
       if (items.length === 0) {
         // If no local items, fetch from API
-        const response = await api.get('/items');
-        items = response.data.items;
+        const response = await api.get<{ items: Item[] }>('/items');
+        items = response.data?.items || [];
         await db.items.bulkPut(items);
       }
 
@@ -63,8 +63,8 @@ export const useItemStore = create<ItemState & ItemActions>((set, get) => ({
       let categories = await db.categories.toArray();
 
       if (categories.length === 0) {
-        const response = await api.get('/categories');
-        categories = response.data.categories;
+        const response = await api.get<{ categories: Category[] }>('/categories');
+        categories = response.data?.categories || [];
         await db.categories.bulkPut(categories);
       }
 
@@ -76,8 +76,8 @@ export const useItemStore = create<ItemState & ItemActions>((set, get) => ({
 
   loadInventory: async (locationId: string) => {
     try {
-      const response = await api.get(`/inventory/${locationId}`);
-      const inventoryLevels: InventoryLevel[] = response.data.inventory;
+      const response = await api.get<{ inventory: InventoryLevel[] }>(`/inventory/${locationId}`);
+      const inventoryLevels: InventoryLevel[] = response.data?.inventory || [];
 
       const inventoryMap = new Map<string, InventoryLevel>();
       inventoryLevels.forEach((level) => {
@@ -150,8 +150,8 @@ export const useItemStore = create<ItemState & ItemActions>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.get('/items');
-      const items = response.data.items;
+      const response = await api.get<{ items: Item[] }>('/items');
+      const items = response.data?.items || [];
 
       await db.items.clear();
       await db.items.bulkPut(items);

@@ -40,8 +40,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
       let customers = await db.customers.toArray();
 
       if (customers.length === 0) {
-        const response = await api.get('/customers');
-        customers = response.data.customers;
+        const response = await api.get<{ customers: Customer[] }>('/customers');
+        customers = response.data?.customers || [];
         await db.customers.bulkPut(customers);
       }
 
@@ -76,8 +76,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
     // If online and few results, also search API
     if (results.length < 5 && navigator.onLine) {
       try {
-        const response = await api.get(`/customers/search?q=${encodeURIComponent(query)}`);
-        const apiResults = response.data.customers;
+        const response = await api.get<{ customers: Customer[] }>(`/customers/search?q=${encodeURIComponent(query)}`);
+        const apiResults = response.data?.customers || [];
 
         // Merge and deduplicate
         const existingIds = new Set(results.map((c) => c.id));
@@ -109,8 +109,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
 
   loadCustomerHistory: async (customerId: string) => {
     try {
-      const response = await api.get(`/customers/${customerId}/transactions`);
-      set({ customerHistory: response.data.transactions });
+      const response = await api.get<{ transactions: Transaction[] }>(`/customers/${customerId}/transactions`);
+      set({ customerHistory: response.data?.transactions || [] });
     } catch {
       // Load from local if available
       const transactions = await db.transactions
@@ -128,8 +128,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.post('/customers', customerData);
-      const newCustomer = response.data.customer;
+      const response = await api.post<{ customer: Customer }>('/customers', customerData);
+      const newCustomer = response.data!.customer;
 
       await db.customers.add(newCustomer);
 
@@ -152,8 +152,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.put(`/customers/${id}`, data);
-      const updatedCustomer = response.data.customer;
+      const response = await api.put<{ customer: Customer }>(`/customers/${id}`, data);
+      const updatedCustomer = response.data!.customer;
 
       await db.customers.put(updatedCustomer);
 
@@ -207,8 +207,8 @@ export const useCustomerStore = create<CustomerState & CustomerActions>((set, ge
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.get('/customers');
-      const customers = response.data.customers;
+      const response = await api.get<{ customers: Customer[] }>('/customers');
+      const customers = response.data?.customers || [];
 
       await db.customers.clear();
       await db.customers.bulkPut(customers);

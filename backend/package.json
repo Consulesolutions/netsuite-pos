@@ -16,8 +16,10 @@
   },
   "dependencies": {
     "@prisma/client": "^5.8.1",
+    "backend": "file:",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.1.6",
+    "cd": "^0.3.3",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.3.1",
@@ -27,11 +29,15 @@
     "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "oauth-1.0a": "^2.2.6",
+    "resend": "^3.2.0",
     "socket.io": "^4.7.4",
     "stripe": "^14.13.0",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -8,9 +8,11 @@ import { logger } from '../utils/logger.js';
 const router = Router();
 const prisma = new PrismaClient();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
-});
+// Only initialize Stripe if key is configured
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeKey
+  ? new Stripe(stripeKey, { apiVersion: '2023-10-16' })
+  : null;
 
 // Pricing plans
 const PLANS = {
@@ -86,7 +88,7 @@ router.get('/subscription', authMiddleware, async (req: AuthenticatedRequest, re
     const tenant = user.tenant;
     let subscription = null;
 
-    if (tenant.stripeSubscriptionId) {
+    if (stripe && tenant.stripeSubscriptionId) {
       subscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
     }
 
@@ -111,6 +113,10 @@ router.get('/subscription', authMiddleware, async (req: AuthenticatedRequest, re
 // Create checkout session
 router.post('/checkout', authMiddleware, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    if (!stripe) {
+      throw new ValidationError('Billing is not configured');
+    }
+
     const { planId } = req.body;
 
     if (!planId || !PLANS[planId as keyof typeof PLANS]) {
@@ -182,6 +188,10 @@ router.post('/checkout', authMiddleware, async (req: AuthenticatedRequest, res: 
 // Create customer portal session
 router.post('/portal', authMiddleware, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    if (!stripe) {
+      throw new ValidationError('Billing is not configured');
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { tenant: true },
@@ -209,6 +219,11 @@ router.post('/portal', authMiddleware, async (req: AuthenticatedRequest, res: Re
 
 // Stripe webhook
 router.post('/webhook', async (req: Request, res: Response, next: NextFunction) => {
+  if (!stripe) {
+    res.status(400).send('Billing not configured');
+    return;
+  }
+
   const sig = req.headers['stripe-signature'] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

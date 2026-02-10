@@ -245,9 +245,7 @@ export class ReceiptService {
     width: number,
     bold = false
   ): string {
-    const amountStr = typeof amount === 'number'
-      ? `$${amount.toFixed(2)}`
-      : amount.toString();
+    const amountStr = `$${amount.toFixed(2)}`;
 
     const padding = width - label.length - amountStr.length;
     const line = label + ' '.repeat(Math.max(1, padding)) + amountStr;

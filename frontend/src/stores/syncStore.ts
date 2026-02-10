@@ -182,8 +182,8 @@ export const useSyncStore = create<SyncState & SyncActions>((set, get) => ({
     }));
 
     try {
-      const response = await api.get('/items/sync');
-      const items = response.data.items;
+      const response = await api.get<{ items: unknown[] }>('/items/sync');
+      const items = response.data?.items || [];
 
       await db.items.clear();
       await db.items.bulkAdd(items);
@@ -205,8 +205,8 @@ export const useSyncStore = create<SyncState & SyncActions>((set, get) => ({
     }));
 
     try {
-      const response = await api.get('/customers/sync');
-      const customers = response.data.customers;
+      const response = await api.get<{ customers: unknown[] }>('/customers/sync');
+      const customers = response.data?.customers || [];
 
       await db.customers.clear();
       await db.customers.bulkAdd(customers);
@@ -228,8 +228,8 @@ export const useSyncStore = create<SyncState & SyncActions>((set, get) => ({
     }));
 
     try {
-      const response = await api.get('/inventory/sync');
-      const inventory = response.data.inventory;
+      const response = await api.get<{ inventory: unknown[] }>('/inventory/sync');
+      const inventory = response.data?.inventory || [];
 
       await db.inventory.clear();
       await db.inventory.bulkAdd(inventory);

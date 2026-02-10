@@ -10,8 +10,9 @@ const prisma = new PrismaClient();
 router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { category, search, active } = req.query;
+    const tenantId = req.user!.tenantId;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { tenantId };
 
     if (category) {
       where.categoryId = category as string;
@@ -69,9 +70,10 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const tenantId = req.user!.tenantId;
 
-    const item = await prisma.item.findUnique({
-      where: { id },
+    const item = await prisma.item.findFirst({
+      where: { id, tenantId },
       include: {
         category: true,
         priceLevels: true,
@@ -123,9 +125,10 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFu
 router.get('/barcode/:barcode', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { barcode } = req.params;
+    const tenantId = req.user!.tenantId;
 
     const item = await prisma.item.findFirst({
-      where: { barcode, isActive: true },
+      where: { tenantId, barcode, isActive: true },
       include: {
         category: true,
       },
@@ -163,9 +166,10 @@ router.get('/barcode/:barcode', async (req: AuthenticatedRequest, res: Response,
 router.get('/sku/:sku', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { sku } = req.params;
+    const tenantId = req.user!.tenantId;
 
     const item = await prisma.item.findFirst({
-      where: { sku: { equals: sku, mode: 'insensitive' }, isActive: true },
+      where: { tenantId, sku: { equals: sku, mode: 'insensitive' }, isActive: true },
       include: {
         category: true,
       },
@@ -202,10 +206,12 @@ router.get('/sku/:sku', async (req: AuthenticatedRequest, res: Response, next: N
 // Sync items (trigger sync from NetSuite)
 router.get('/sync', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const tenantId = req.user!.tenantId;
+
     // This would trigger a sync from NetSuite
     // For now, just return all items
     const items = await prisma.item.findMany({
-      where: { isActive: true },
+      where: { tenantId, isActive: true },
       include: {
         category: true,
       },
