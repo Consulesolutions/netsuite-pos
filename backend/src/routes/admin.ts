@@ -443,7 +443,9 @@ router.post('/invitations', async (req: AuthenticatedRequest, res: Response, nex
 // List all pending invitations
 router.get('/invitations', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    console.log('[ADMIN] GET /invitations called by:', req.user?.email);
     const { status = 'pending' } = req.query;
+    console.log('[ADMIN] Status filter:', status);
 
     const where: any = {};
 
@@ -477,11 +479,13 @@ router.get('/invitations', async (req: AuthenticatedRequest, res: Response, next
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log('[ADMIN] Found', invitations.length, 'invitations');
     res.json({
       success: true,
       data: invitations,
     });
   } catch (error) {
+    console.error('[ADMIN] Error in /invitations:', error);
     next(error);
   }
 });
