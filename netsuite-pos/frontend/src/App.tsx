@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import Layout from './components/common/Layout';
@@ -10,6 +11,17 @@ import InventoryManagement from './components/inventory/InventoryManagement';
 import CustomerManagement from './components/customers/CustomerManagement';
 import ReportsDashboard from './components/reports/ReportsDashboard';
 import SettingsPage from './components/common/SettingsPage';
+
+// Initialize auth on app load
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  return <>{children}</>;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -50,6 +62,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+    <AuthInitializer>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
@@ -77,6 +90,7 @@ function App() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </AuthInitializer>
   );
 }
 
