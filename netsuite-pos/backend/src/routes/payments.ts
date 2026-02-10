@@ -66,7 +66,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
 // Process payment (for card payments via terminal)
 router.post('/process', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { amount, method, terminalId } = req.body;
+    const { amount, method, terminalId: _terminalId } = req.body;
 
     if (!amount || !method) {
       throw new ValidationError('Amount and method are required');
