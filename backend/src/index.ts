@@ -65,10 +65,32 @@ const io = new SocketServer(httpServer, {
   },
 });
 
+// CORS configuration - allow multiple origins
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+].filter(Boolean) as string[];
+
+// Also allow any Vercel preview URLs for this project
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return true; // Allow requests with no origin (like mobile apps or curl)
+  if (allowedOrigins.includes(origin)) return true;
+  // Allow Vercel preview deployments
+  if (origin.includes('vercel.app')) return true;
+  return false;
+};
+
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, origin || true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
