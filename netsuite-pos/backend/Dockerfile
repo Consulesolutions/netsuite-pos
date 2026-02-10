@@ -3,6 +3,9 @@
                                                                                                                                     
   WORKDIR /app                                                                                                                      
                                                                                                                                     
+  # Install OpenSSL                                                                                                                 
+  RUN apk add --no-cache openssl                                                                                                    
+                                                                                                                                    
   # Copy package files                                                                                                              
   COPY package*.json ./                                                                                                             
   COPY prisma ./prisma/                                                                                                             
@@ -24,12 +27,8 @@
                                                                                                                                     
   WORKDIR /app                                                                                                                      
                                                                                                                                     
-  # Install dumb-init for proper signal handling                                                                                    
-  RUN apk add --no-cache dumb-init                                                                                                  
-                                                                                                                                    
-  # Create non-root user                                                                                                            
-  RUN addgroup -g 1001 -S nodejs && \                                                                                               
-      adduser -S nodejs -u 1001                                                                                                     
+  # Install dumb-init and OpenSSL                                                                                                   
+  RUN apk add --no-cache dumb-init openssl                                                                                          
                                                                                                                                     
   # Copy package files                                                                                                              
   COPY package*.json ./                                                                                                             
@@ -44,8 +43,12 @@
   # Copy built files from builder                                                                                                   
   COPY --from=builder /app/dist ./dist                                                                                              
                                                                                                                                     
-  # Create logs directory                                                                                                           
-  RUN mkdir -p logs && chown -R nodejs:nodejs logs                                                                                  
+  # Create non-root user                                                                                                            
+  RUN addgroup -g 1001 -S nodejs && \                                                                                               
+      adduser -S nodejs -u 1001                                                                                                     
+                                                                                                                                    
+  # Create logs directory and set permissions                                                                                       
+  RUN mkdir -p logs && chown -R nodejs:nodejs /app                                                                                  
                                                                                                                                     
   # Switch to non-root user                                                                                                         
   USER nodejs                                                                                                                       
@@ -59,4 +62,4 @@
                                                                                                                                     
   # Start the application                                                                                                           
   ENTRYPOINT ["dumb-init", "--"]                                                                                                    
-  CMD ["node", "dist/index.js"]    
+  CMD ["node", "dist/index.js"]
