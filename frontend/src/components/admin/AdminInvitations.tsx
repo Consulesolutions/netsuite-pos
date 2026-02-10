@@ -34,7 +34,7 @@ export default function AdminInvitations() {
     setIsLoading(true);
     try {
       const response = await api.get(`/admin/invitations?status=${status}`);
-      setInvitations(response.data);
+      setInvitations(response.data.data);
     } catch (error) {
       toast.error('Failed to load invitations');
     } finally {

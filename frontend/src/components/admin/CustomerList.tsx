@@ -60,8 +60,8 @@ export default function CustomerList() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await api.get(`/admin/tenants?${params}`);
-      setCustomers(response.data.tenants);
-      setPagination(response.data.pagination);
+      setCustomers(response.data.data.tenants);
+      setPagination(response.data.data.pagination);
     } catch (error) {
       toast.error('Failed to load customers');
     } finally {
