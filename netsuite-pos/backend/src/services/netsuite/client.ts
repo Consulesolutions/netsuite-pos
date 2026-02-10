@@ -23,8 +23,10 @@ interface NetSuiteResponse<T> {
 export class NetSuiteClient {
   private config: NetSuiteConfig;
   private oauth: OAuth;
+  private tenantId?: string;
 
-  constructor() {
+  constructor(tenantId?: string) {
+    this.tenantId = tenantId;
     this.config = {
       accountId: process.env.NETSUITE_ACCOUNT_ID || '',
       consumerKey: process.env.NETSUITE_CONSUMER_KEY || '',
@@ -132,6 +134,10 @@ export class NetSuiteClient {
 
   async syncItems(): Promise<{ count: number }> {
     try {
+      if (!this.tenantId) {
+        throw new Error('TenantId is required for item sync');
+      }
+
       const response = await this.request<{
         items: Array<{
           internalId: string;
@@ -153,7 +159,12 @@ export class NetSuiteClient {
 
       for (const item of items) {
         await prisma.item.upsert({
-          where: { netsuiteId: item.internalId },
+          where: {
+            tenantId_netsuiteId: {
+              tenantId: this.tenantId,
+              netsuiteId: item.internalId,
+            },
+          },
           update: {
             sku: item.itemId,
             name: item.displayName,
@@ -165,6 +176,7 @@ export class NetSuiteClient {
             updatedAt: new Date(),
           },
           create: {
+            tenantId: this.tenantId,
             netsuiteId: item.internalId,
             sku: item.itemId,
             name: item.displayName,
@@ -187,6 +199,10 @@ export class NetSuiteClient {
 
   async syncCustomers(): Promise<{ count: number }> {
     try {
+      if (!this.tenantId) {
+        throw new Error('TenantId is required for customer sync');
+      }
+
       const response = await this.request<{
         customers: Array<{
           internalId: string;
@@ -208,7 +224,12 @@ export class NetSuiteClient {
 
       for (const customer of customers) {
         await prisma.customer.upsert({
-          where: { netsuiteId: customer.internalId },
+          where: {
+            tenantId_netsuiteId: {
+              tenantId: this.tenantId,
+              netsuiteId: customer.internalId,
+            },
+          },
           update: {
             firstName: customer.firstName,
             lastName: customer.lastName,
@@ -219,6 +240,7 @@ export class NetSuiteClient {
             updatedAt: new Date(),
           },
           create: {
+            tenantId: this.tenantId,
             netsuiteId: customer.internalId,
             firstName: customer.firstName,
             lastName: customer.lastName,
