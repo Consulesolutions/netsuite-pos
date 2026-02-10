@@ -5,8 +5,8 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "npx prisma db push --accept-data-loss && npm start",
+    "startCommand": "npx prisma db push --accept-data-loss && echo 'Starting Node...' && node --trace-warnings dist/index.js 2>&1",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 3
   }
 }
